@@ -1,0 +1,28 @@
+function aws() {
+  if [ -n "$PASS_PROFILE_SUBDIR" ]
+  then
+    prof aws "$@"
+  else
+    aws "$@"
+  fi
+}
+
+function confdir() {
+  CONFIG_HOME=$HOME/prize/src/configs
+  filter=$1
+
+  dir=$(find $CONFIG_HOME -maxdepth 1 -mindepth 1 -type d | gum filter --value="$filter")
+  cd "$dir"
+}
+
+function appdir() {
+  APPS_HOME=$HOME/prize/src/apps
+  filter=$1
+
+  dir=$(find $APPS_HOME -maxdepth 1 -mindepth 1 -type d | gum filter --value="$filter")
+  cd "$dir"
+}
+
+function pass() {
+  /usr/bin/pass "$@" 2>/dev/null
+}

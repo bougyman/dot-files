@@ -1,0 +1,39 @@
+alias k=kubectl
+alias kg="k get"
+alias ke="k edit"
+alias kd="k describe"
+alias kl="k logs"
+alias kgp="kg po"
+alias kdp="kd po"
+alias kge="kubectl get events --sort-by='{.lastTimestamp}'"
+
+alias mk="microk8s kubectl"
+alias mkg="mk get"
+alias mke="mk edit"
+alias mkd="mk describe"
+alias mkl="mk logs"
+alias mkgp="mkg po"
+alias mkdp="mkd po"
+alias mkge="mk get events --sort-by='{.lastTimestamp}'"
+
+kexit() {
+  k exec -it $1 -- /bin/sh
+}
+
+alias ku=kustomize
+alias kb="ku build"
+
+alias -g OJ="-o json"
+alias -g OY="-o yaml"
+alias -g OW="-o wide"
+alias -g ON="-o name"
+
+KUBECONFIG=~/.kube/config
+for conf in ~/.kube/conf.d/*.yaml
+do
+    KUBECONFIG=$KUBECONFIG:"$conf"
+done
+export KUBECONFIG
+
+source <(~/bin/kubectl completion zsh)
+zstyle ':completion:*:*:kubectl:*' list-grouped false

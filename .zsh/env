@@ -1,0 +1,4 @@
+# vim: filetype=zsh :
+#
+# Load this file somewhere in your ~/.zshrc: source ~/.zsh/kaliases
+export GIT_TTY=$(tty)

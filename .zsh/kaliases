@@ -35,5 +35,5 @@ do
 done
 export KUBECONFIG
 
-source <(~/bin/kubectl completion zsh)
+source <(kubectl completion zsh)
 zstyle ':completion:*:*:kubectl:*' list-grouped false

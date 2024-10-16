@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+export PATH=/home/bougyman/.cargo/bin:$PATH
+inputmodule-control led-matrix --percentage 0 --animate false
+inputmodule-control --serial-dev /dev/ttyACM1 led-matrix --symbols "heart" " " I T
+inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --symbols S Q U A D

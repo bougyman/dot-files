@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+declare -i new_volume current_volume
+current_volume=$(spotify_player get key playback | jq '.device.volume_percent')
+new_volume=$current_volume
+case $0 in
+    *up)
+        new_volume=$((current_volume + 5))
+        ;;
+    *down)
+        new_volume=$((current_volume - 5))
+        ;;
+    *mute)
+        new_volume=0
+        ;;
+    *)
+        echo "Usage: $0 {up|down|mute}"
+        exit 1
+        ;;
+esac
+exec spotify_player playback volume $new_volume

@@ -1,0 +1,20 @@
+#!/bin/bash
+if command -v acpi >/dev/null 2>&1
+then
+	acpi |gawk -F, '$0 ~ /unavailable/ { next }
+                $1 ~ /Battery /{
+                     percent=strtonum($2)
+                     }
+                END{
+                  print percent
+                }'
+                exit
+fi
+if command -v pmset >/dev/null 2>&1
+then
+    pmset -g batt | gawk '
+        NR==2 { percent = strtonum(substr($3, 1, length($3)-2)) }
+        END {
+            print percent
+        }'
+fi

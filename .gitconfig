@@ -1,0 +1,128 @@
+[user]
+	name = Tj (bougyman) Vanderpoel
+	email = tj@rubyists.com
+  signingkey = 25E7610B77EFB3B3
+
+[alias]
+  # Checkout
+  co = checkout
+
+  # Branch shortcuts
+  master     = checkout master
+  mainline   = checkout mainline
+  main       = checkout main
+  staging    = checkout staging
+  production = checkout production
+  develop    = checkout develop
+  default    = checkout default
+
+  # Common shortcuts for simple tasks
+  a = add
+  br = branch
+  ci = commit
+  df = diff
+  g = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+  gh = !git --no-pager log gh/mainline..HEAD --abbrev-commit --pretty=oneline
+  glo = log --oneline
+  pr = !gh pr
+  h = !git --no-pager log origin/mainline..HEAD --abbrev-commit --pretty=oneline
+  l = log
+  lg = log -p
+  mmaster = !bash -c 'curr=$(git branch --show-current) && git master && git pull && git co $curr'
+
+  # Pretty Pretty print
+  lsd = log --graph --decorate --pretty=oneline --abbrev-commit --all
+  m = merge
+  mn = merge --no-ff
+  mf = merge --ff-only
+  p = pull
+  r = !git ls-files -z --deleted | xargs -0 git rm # Remove Deleted Files
+  s = status
+  st = status
+  x = commit -m
+  xa = commit -av # Add any known files to this commit, then commit
+  xam = commit -av -m # Add any known files to this commit, then commit
+
+  # Amend a commit
+  amend = !git log -n 1 --pretty=tformat:%s%n%n%b | git commit -F - --amend
+
+  # Add to .gitignore
+  ignore=!([ ! -e .gitignore ] && touch .gitignore) | echo $1 >>.gitignore
+
+  # Pushing things
+  poh = !bash -c 'git h && echo Ready to push? ENTER && read foo && git push origin HEAD' - # To the HEAD of _THIS_ branch
+  pom = !bash -c 'git h && echo Ready to push? ENTER && read foo && git push origin mainline' - # To mainline
+  pgh = !bash -c 'git gh && echo Ready to push? ENTER && read && git push gh HEAD' - # Push to the 'gh' remote
+
+  # Yes, an alias for alias
+  alias = !git config --list | grep 'alias\\.' | sed 's/alias\\.\\([^=]*\\)=\\(.*\\)/\\1\\t=> \\2/' | sort
+
+  # Dangerous rebase stuff
+  purm = !git pull --rebase && git pom
+  rem = !bash -c 'test "$#" = 1 && git h && git checkout mainline && git pull && git checkout \"$1\" && git rebase mainline && git checkout mainline && git mn \"$1\" && echo Done and ready to do: git pom && exit 0 || echo \"usage: git rem \" >&2 && exit 1' -
+  ro = !sh -c 'h="$(git symbolic-ref -q HEAD)" && git rebase "origin/${h#refs/heads/}"' -
+
+  # "Dailies" Branch creation by date
+  cn = !sh -c 'git checkout -b "${1:-$ENV/`date +%Y-%m-%d`}" origin/mainline' -
+  cb = !sh -c 'git checkout -b "${1}" origin/mainline' -
+
+  # Stuff I can't remember how to use
+  ct = !sh -c 'echo $(git symbolic-ref -q HEAD) > /tmp/$ENV-lastgit && git checkout "$1/$(date +%F)"' -
+  cy = !sh -c 'echo $(git symbolic-ref -q HEAD) > /tmp/$ENV-lastgit && git checkout "$1/$(if [ $(date -d \"yesterday\" +%u) -gt 5 ];then date -d \"last friday\" +%F;else date -d \"yesterday\" +%F;fi)"' -
+  cc = !sh -c 'git checkout "eng-${ticket}"' -
+  ccl = !bash -c 'h=$(</tmp/$ENV-lastgit) && h="${h#refs/heads/}" && [ "${h}x" != "x" ] && git co "${h}"' -
+  mt = !sh -c 'h="$(git symbolic-ref -q HEAD)" && git checkout "$1/$(date +%F)" && git mn "${h#refs/heads/}"' -
+  penv = !sh -c 'h="$(git symbolic-ref -q HEAD)" && me="${h#refs/heads/}" && git ct $1 && git mn $me && git poh && e $1 knife up && git co $me' -
+
+  # Finding things
+  find = !git ls-tree -r --name-only HEAD | grep --color $1
+
+  # Finding conflicts
+  conflict = !git status|awk '$1~/both/{printf $(NF)\" \"}'
+  modified = !git st|awk  'BEGIN{p=0}/modified/&&p==1{printf $(NF)\" \"}/Changes not staged for commit:/{p=1}'
+  deleted = !git st|awk  'BEGIN{p=0}/deleted/&&p==1{printf $(NF)\" \"}/Changes not staged for commit:|Unmerged paths:/{p=1}'
+  added = !git st|awk  'BEGIN{p=0}$2~/added/&&p==1{printf $(NF)\" \"}/Changes not staged for commit:|Unmerged paths:/{p=1}'
+  cruft = !git st|awk  'BEGIN{p=0}NF==1&&p==1{printf $(NF)\" \"}/Changes not staged for commit:|Untracked files:/{p=1}'
+
+  # Submodules
+  sup = !git submodule foreach git pull
+  ssup = !git submodule foreach git sup
+
+	dag = log --graph --format='format:%C(yellow)%h%C(reset) %C(blue)\"%an\" <%ae>%C(reset) %C(magenta)%ar%C(reset)%C(auto)%d%C(reset)%n%s' --date-order
+
+  finish = !git flow feature finish
+
+  # Gitlab Merge Requests
+  mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2'
+
+[push]
+	default = simple
+[core]
+  #excludesfile = ~/.gitignore.global
+	pager = less -FMRiX
+  precomposeUnicode = true
+[color]
+	ui = auto
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[init]
+	templatedir = ~/.git-templates
+[fetch]
+	prune = true
+[rebase]
+	autosquash = true
+[pull]
+	rebase = false
+[credential "https://github.com"]
+	helper =
+	helper = !/home/linuxbrew/.linuxbrew/Cellar/gh/2.11.3/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !/home/linuxbrew/.linuxbrew/Cellar/gh/2.11.3/bin/gh auth git-credential
+[credential]
+	helper = cache
+[commit]
+	gpgsign = true

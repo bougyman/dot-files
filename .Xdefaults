@@ -1,0 +1,32 @@
+URxvt.foreground: orange
+URxvt.urlLauncher: chromium-browser
+URxvt.transparent: True
+URxvt.shading: 24
+URxvt.perl-ext-common:  fullscreen
+URxvt.keysym.F11:       perl:fullscreen:switch
+URxvt.font: xft:Hack:pixelsize=20:antialias=true:bold
+URxvt.font1: xft:Hack:pixelsize=22:antialias=true:bold
+URxvt.font2: xft:Hack:pixelsize=24:antialias=true:bold
+URxvt.font3: xft:Hack:pixelsize=26:antialias=true:bold
+URxvt.font4: xft:Hack:pixelsize=28:antialias=true:bold
+URxvt.scrollBar: False
+URxvt.border: False
+URxvt.saveLines: 3000
+
+Rxvt.urlLauncher: chromium-browser
+Rxvt.perl-ext-common:  fullscreen
+Rxvt.keysym.F11:       perl:fullscreen:switch
+Rxvt.foreground: orange
+Rxvt.transparent: True
+Rxvt.shading: 24
+Rxvt.font: xft:Hack:pixelsize=20:antialias=true:bold
+Rxvt.font1: xft:Hack:pixelsize=22:antialias=true:bold
+Rxvt.font2: xft:Hack:pixelsize=24:antialias=true:bold
+Rxvt.font3: xft:Hack:pixelsize=26:antialias=true:bold
+Rxvt.font4: xft:Hack:pixelsize=28:antialias=true:bold
+Rxvt.scrollBar: False
+Rxvt.border: False
+Rxvt.saveLines: 3000
+
+Xcursor.size: 70
+Xcursor.theme: Adwaita-red

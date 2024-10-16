@@ -37,3 +37,7 @@ export KUBECONFIG
 
 source <(kubectl completion zsh)
 zstyle ':completion:*:*:kubectl:*' list-grouped false
+if [ -f ~/.zsh/paliases ]
+then
+    source ~/.zsh/paliases
+fi

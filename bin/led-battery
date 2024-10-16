@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+export PATH=/home/bougyman/.cargo/bin:~/.local/bin:$PATH
+declare -i percent
+percent=$(battery-percentage)
+echo "Battery is at $percent%"
+if [ $# -gt 0 ]
+then
+    inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --percentage $percent
+    exit
+fi
+if [ $percent -gt 20 ]
+then
+    args=(--serial-dev /dev/ttyACM0)
+fi
+if [ $percent -lt 18 ]
+then
+    while true
+    do
+        inputmodule-control led-matrix --symbols "batteryLow" " " ":(" " " "!!" --blinking
+        sleep 5
+        percent=$(battery-percentage)
+        if [ $percent -gt 10 ]
+        then
+            inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --percentage $percent --brightness 100
+            exit
+        fi
+    done
+fi
+if [ $percent -gt 50 ]
+then
+    if [ $percent -lt 80 ]
+    then
+        # We don't care about percents between 50 and 80, this is the sweet no-care zone
+        exit
+    fi
+fi
+inputmodule-control "${args[@]}" led-matrix --percentage $percent

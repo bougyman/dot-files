@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+export PATH=/home/bougyman/.cargo/bin:$PATH
+number=$((RANDOM % 6))
+case $number in
+    0) funsym=":)"
+        ;;
+    1) funsym=":("
+        ;;
+    2) funsym=":|"
+        ;;
+    3) funsym="heart"
+        ;;
+    4) funsym="heart0"
+        ;;
+    5) funsym="heart2"
+        ;;
+    *) funsym=":"
+        ;;
+esac
+if [ $# -gt 0 ]
+then
+    tz=":$(realpath --relative-to=/usr/share/zoneinfo /etc/localtime)"
+else
+    tz=":US/Eastern"
+fi
+# shellcheck disable=SC2046
+mapfile -t time <<< $(TZ="$tz" date +%H:%M | sed -e 's/\(.\)/\1 /g' | sed -e "s/:/$funsym/" | xargs -n1)
+inputmodule-control --serial-dev /dev/ttyACM1 led-matrix --percentage 0 --animate false
+inputmodule-control --serial-dev /dev/ttyACM1 led-matrix --symbols "${time[@]}"
+if [ $# -gt 0 ]
+then
+    mapfile -t date <<< $(TZ="$tz" date +%m:%d | sed -e 's/\(.\)/\1 /g' | sed -e "s/:/$funsym/" | xargs -n1)
+    inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --percentage 0 --animate false
+    inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --symbols "${date[@]}"
+fi

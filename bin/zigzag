@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+export PATH=/home/bougyman/.cargo/bin:$PATH
+inputmodule-control --serial-dev /dev/ttyACM1 led-matrix --pattern zigzag --animate true
+sleep 0.5
+inputmodule-control --serial-dev /dev/ttyACM0 led-matrix --pattern zigzag --animate true
+sleep 2
+inputmodule-control led-matrix --percentage 0 --animate false

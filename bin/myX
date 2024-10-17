@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec xinit /home/bougyman/.xinitrc -- /etc/X11/xinit/xserverrc :0 vt2 -keeptty -auth /tmp/serverauth.food1

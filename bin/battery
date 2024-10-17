@@ -1,0 +1,56 @@
+#!/bin/bash
+if command -v acpi >/dev/null 2>&1
+then
+	acpi |gawk 'BEGIN{charge="-"}
+                $0 ~ /unavailable/ { next }
+                $1=="Battery"{
+                     field=4
+                     if($3~/^[Cc]harging/)charge="+"
+                     if($3~/^[Ff]ull/)charge="="
+                     if($3=="Not" && $4=="charging,") { field=5; charge="~" }
+                     sub(",","",$(field))
+                     sub("%","",$(field))
+                     percent=strtonum($(field))
+                     time=$(NF)
+                     }
+                END{
+                  if(percent < 20) {
+                    c="#[fg=white,bold,bg=red,dim]"
+                  } else if(percent < 40) {
+                    c="#[fg=red,bold]#[bg=default]"
+                  } else if(percent < 75) {
+                    c="#[fg=yellow,bold]#[bg=default]"
+                  } else if(percent < 100) {
+                    c="#[fg=white,bg=default]"
+                  } else {
+                    c="#[fg=green,bg=default]"
+                  }
+                  print c charge percent"%"
+                }'
+                exit
+fi
+if command -v pmset >/dev/null 2>&1
+then
+    pmset -g batt | gawk '
+        BEGIN { charge = "@" }
+        NR==1 && $0 ~ /Battery Power/ { batt="<-" }
+        NR==1 && $0 ~ /AC Power/ { batt="->" }
+        NR==2 && $4 == "discharging;" { charge = "-" }
+        NR==2 && $4 == "charging;" { charge = "+" }
+        NR==2 { percent = strtonum(substr($3, 1, length($3)-2)) }
+        END {
+            if(percent < 20) {
+                c="#[fg=white,bg=red]"
+            } else if(percent < 50) {
+                c="#[fg=black,bold,bright]#[bg=red,dim]"
+            } else if(percent < 75) {
+                c="#[fg=yellow,bold]#[bg=default]"
+            } else if(percent < 100) {
+                c="#[fg=white,bg=default]"
+            } else {
+                charge = "="
+                c="#[fg=green,bg=default]"
+            }
+            print c batt, charge percent"%"
+        }'
+fi

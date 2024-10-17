@@ -1,0 +1,5 @@
+#!/bin/bash
+podman images | awk '$1 == "<none>"{print $3}' | while read -r dead_image
+do
+    podman image rm "$dead_image" "$@"
+done

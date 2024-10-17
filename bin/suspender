@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+autorandr --load mobile && sleep 2 && systemctl suspend

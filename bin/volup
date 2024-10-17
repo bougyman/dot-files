@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+if readlink -f . >/dev/null 2>&1 # {{{ makes readlink work on mac
+then
+    readlink=readlink
+else
+    if greadlink -f . >/dev/null 2>&1
+    then
+        readlink=greadlink
+    else
+        printf "You must install greadlink to use this (brew install coreutils)\n" >&2
+    fi
+fi # }}}
+
+# Set here to the full path to this script
+me=${BASH_SOURCE[0]}
+[ -L "$me" ] && me=$($readlink -f "$me")
+here=$(cd "$(dirname "$me")" && pwd)
+just_me=$(basename "$me")
+called=$0
+called_name=$(basename $called)
+case $called_name in
+    volup)
+        direction=+
+        ;;
+    voldown)
+        direction=-
+        ;;
+esac
+echo $direction
+if [ "$direction" == "+" ]; then
+    pamixer -i 5
+else
+    pamixer -d 5
+fi
+osd_cat -p middle -A center -f '-misc-fixed-medium-r-semicondensed--20-*-*-*-c-*-*-*' -a 0 -d 3 -b percentage -P $(pamixer --get-volume)
+

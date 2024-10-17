@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec dbus-launch flatpak run com.discordapp.Discord

@@ -41,7 +41,6 @@ else
 fi
 
 autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /usr/local/bin/vault vault
 source ~/.zsh/aliases
 source ~/.zsh/env
 source ~/.zsh/prompt

@@ -1,0 +1,3 @@
+set-option -g status-bg default
+set-option -g status-fg green
+set-option -g status-style fg=white,bright

@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require 'graphicsmagick'
+
+module VistaVallarta
+  class WaterMark
+
+  end
+
+  class Image
+    def initialize(path)
+      @image = path
+    end
+
+    def dimensions
+
+    end
+  end
+end

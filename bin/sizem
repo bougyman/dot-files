@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require 'pathname'
+require 'pry'
+
+TINY = 100_000_000
+SMALL = 200_000_000
+MEDIUM = 325_000_000
+LARGE = 450_000_000
+
+PATH = if ARGV.size.positive?
+         Pathname(ARGV.shift)
+       else
+         Pathname('.')
+       end
+
+def moveit(file, whereto)
+  whereto.directory? || whereto.mkpath
+  puts "Moving #{file} to #{whereto}"
+  file.rename whereto.join(file.basename)
+end
+
+def sizeit(file, size) # rubocop:disable Metrics/MethodLength
+  if size <= TINY
+    moveit file, PATH.join('sized/tiny')
+  elsif size <= SMALL
+    moveit file, PATH.join('sized/small')
+  elsif size <= MEDIUM
+    moveit file, PATH.join('sized/medium')
+  elsif size <= LARGE
+    moveit file, PATH.join('sized/large')
+  else
+    moveit file, PATH.join('sized/huge')
+  end
+end
+
+PATH.children.select(&:file?).sort_by(&:size).each do |p|
+  size = p.size
+  sizeit p, size
+end

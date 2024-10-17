@@ -1,0 +1,2 @@
+#!/bin/sh
+for N in {0..255}; do printf "\e[38;5;%dm%-3d " $N $N; done

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+font='-misc-fixed-medium-r-semicondensed--40-*-*-*-c-*-*-*'
+percentage="$(~/bin/battery | awk -F '[]%]' '{print $(NF-1)}')"
+echo "Battery: $percentage%" | osd_cat -A right -p middle -f "$font" &
+exec osd_cat -A center -b percentage -f "$font" -P "${percentage:1}"

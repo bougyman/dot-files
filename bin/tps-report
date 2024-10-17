@@ -1,0 +1,372 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require 'optparse'
+require 'ostruct'
+require 'uri'
+require 'net/http'
+require 'json'
+require 'English'
+
+module PrizePicks
+  module TpsReport
+    # The report command class
+    class Reporter # rubocop:disable Metrics/ClassLength
+      CHANNEL = 'C03HA99866N'
+      AUDIT_SERVERS = ['Audits_Primary_1'].freeze
+      WRITE_SERVERS = ['Picks_Primary_2'].freeze
+      READ_SERVERS = ['Picks_Logical_3', 'Picks_Logical_2'].freeze
+      FIVE_MINUTE_THRESHOLD = ENV.fetch('FIVE_MINUTE_THRESHOLD', 10_000).to_i
+      FIVE_MINUTE_THRESHOLD_READ = ENV.fetch('FIVE_MINUTE_THRESHOLD_READ', 6000).to_i
+      FIVE_MINUTE_THRESHOLD_WRITE = ENV.fetch('FIVE_MINUTE_THRESHOLD_WRITE', 6000).to_i
+      MAX_THRESHOLD = ENV.fetch('MAX_THRESHOLD', 15_000).to_i
+      MAX_THRESHOLD_READ = ENV.fetch('MAX_THRESHOLD_READ', 8000).to_i
+      MAX_THRESHOLD_WRITE = ENV.fetch('MAX_THRESHOLD_WRITE', 8000).to_i
+      SLACK_TOKEN = ENV.fetch('SLACK_TOKEN', nil)
+
+      attr_reader :options, :read_data, :write_data, :slack_token, :from, :to
+
+      def initialize(argv)
+        @args = argv
+        @slack_token = SLACK_TOKEN
+        @options = OpenStruct.new(help: false, # rubocop:disable Style/OpenStructUse
+                                  verbose: 0,
+                                  channel: CHANNEL,
+                                  slack_message: false,
+                                  slack_threshold: false)
+      end
+
+      def maximum_read_tps
+        @maximum_read_tps ||= [Time.at(read_tps.key(read_tps.values.max).to_i), read_tps.values.max]
+      end
+
+      def maximum_write_tps
+        @maximum_write_tps ||= [Time.at(write_tps.key(write_tps.values.max).to_i), write_tps.values.max]
+      end
+
+      def maximum_audit_tps
+        @maximum_audit_tps ||= [Time.at(audit_tps.key(audit_tps.values.max).to_i), audit_tps.values.max]
+      end
+
+      def maximum_tps
+        @maximum_tps ||= [Time.at(total_tps.key(total_tps.values.max).to_i), total_tps.values.max]
+      end
+
+      def minimum_tps
+        @minimum_tps ||= [Time.at(total_tps.key(total_tps.values.min).to_i), total_tps.values.min]
+      end
+
+      def minimum_read_tps
+        @minimum_read_tps ||= [Time.at(read_tps.key(read_tps.values.min).to_i), read_tps.values.min]
+      end
+
+      def minimum_write_tps
+        @minimum_write_tps ||= [Time.at(write_tps.key(write_tps.values.min).to_i), write_tps.values.min]
+      end
+
+      def minimum_audit_tps
+        @minimum_audit_tps ||= [Time.at(audit_tps.key(audit_tps.values.min).to_i), audit_tps.values.min]
+      end
+
+      def average_tps
+        @average_tps ||= total_tps.values.sum / total_tps.values.size
+      end
+
+      def average_write_tps
+        @average_write_tps ||= write_tps.values.sum / write_tps.values.size
+      end
+
+      def average_audit_tps
+        @average_audit_tps ||= audit_tps.values.sum / audit_tps.size
+      end
+
+      def average_read_tps
+        @average_read_tps ||= read_tps.values.sum / read_tps.size
+      end
+
+      def current_tps
+        @current_tps ||= total_tps[total_tps.keys.last]
+      end
+
+      def current_write_tps
+        @current_write_tps ||= write_tps[write_tps.keys.last]
+      end
+
+      def current_read_tps
+        @current_read_tps ||= read_tps[read_tps.keys.last]
+      end
+
+      def current_audit_tps
+        @current_audit_tps ||= audit_tps[audit_tps.keys.last]
+      end
+
+      def total_tps
+        return @total_tps if @total_tps
+
+        @total_tps = {}
+        write_tps.each_key do |time|
+          @total_tps[time] = combine_tps time
+        end
+        @total_tps
+      end
+
+      def combine_tps(time) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        totes = if read_tps.key? time
+                  read_tps[time] + write_tps[time]
+                else
+                  warn "No read_tps for #{Time.at(time.to_i)}"
+                  write_tps[time]
+                end
+
+        totes += if audit_tps.key? time
+                   audit_tps[time]
+                 else
+                   warn "No audit_tps for #{Time.at(time.to_i)}"
+                   0
+                 end
+        totes
+      end
+
+      def audit_tps
+        return @audit_tps if @audit_tps
+
+        report!
+        @audit_tps = {}
+        @audit_data.first['data'].each do |(time, _value)|
+          @audit_tps[time] = @audit_data.map { |d| d['data'].detect { |(t, _v)| t == time }&.last&.to_i }.compact.sum
+        end
+        @audit_tps
+      end
+
+      def write_tps
+        return @write_tps if @write_tps
+
+        report!
+        @write_tps = {}
+        @write_data.first['data'].each do |(time, _value)|
+          @write_tps[time] = @write_data.map { |d| d['data'].detect { |(t, _v)| t == time }&.last&.to_i }.compact.sum
+        end
+        @write_tps
+      end
+
+      def read_tps
+        return @read_tps if @read_tps
+
+        report!
+        @read_tps = {}
+        @read_data.first['data'].each do |(time, _value)|
+          @read_tps[time] = @read_data.map { |d| d['data'].detect { |(t, _v)| t == time }&.last&.to_i }.compact.sum
+        end
+        @read_tps
+      end
+
+      def opt_banner(opt)
+        opt.banner = "Usage: #{$PROGRAM_NAME} <options> [FROM]"
+        opt.separator ''
+        opt.separator 'Options:'
+      end
+
+      def opt_to(opt)
+        opt.on('-t DATESPEC', '--to', 'End time for report, defaults to now') { |t| @options.to = t }
+      end
+
+      def opt_channel(opt)
+        opt.on('-c CHANNEL', '--channel', 'Channel to announce to') { |c| @options.channel = c }
+      end
+
+      def opt_slack_threshold(opt)
+        opt.on('-S', '--slack_threshold', 'Announce the report to slack if thresholds are met') do |s|
+          @options.slack_threshold = s
+        end
+      end
+
+      def opt_slack_message(opt)
+        opt.on('-s', '--slack_message', 'Announce the report to slack') do |s|
+          @options.slack_message = s
+        end
+      end
+
+      def opt_verbose(opt)
+        opt.on('-v', '--verbose', 'Increased output') { |_| @options.verbose += 1 }
+      end
+
+      def opt_help(opt)
+        opt.on('-h', '--help', 'Show usage') do
+          puts opt
+          exit
+        end
+      end
+
+      def parse_opts!
+        OptionParser.new do |o|
+          %w[banner to slack_message slack_threshold channel verbose help].each do |opt|
+            send("opt_#{opt}".to_sym, o)
+          end
+          o.separator ''
+          o.separator '    FROM is a DATESPEC usable as the -d argument to corutils `date` command'
+          o.separator '         defaults to "1 hour ago"'
+          o.separator ''
+          o.separator '    NOTE: Must have SLACK_TOKEN env var set to send a slack message'
+        end.parse! @args
+      end
+
+      def gather_data!(from, to)
+        @from = from
+        @to = to
+        @start_time = `date -d '#{from}' +%s`
+        raise "Invalid 'from' date: '#{from}'" unless $CHILD_STATUS.success?
+
+        @start_time.chomp!
+        @end_time = `date -d '#{to}' +%s`.chomp
+        raise "Invalid 'to' date: '#{to}'" unless $CHILD_STATUS.success?
+
+        @end_time.chomp!
+        gather_tps_data!
+      end
+
+      def gather_tps_data!
+        gather_write_data!
+        gather_read_data!
+        gather_audit_data!
+      end
+
+      def grab_metrics(host)
+        params = {
+          source: host,
+          metric: 'pg.sql.commit',
+          from: @start_time,
+          to: @end_time,
+          graphType: 1,
+          interval: 1,
+          gw: 1049,
+          noneg: 1
+        }
+        uri = URI('http://pg-rw.prizepicks.com:8080/api/v1/datapoints')
+        uri.query = URI.encode_www_form params
+        res = Net::HTTP.get_response uri
+        JSON.parse res.body
+      end
+
+      def gather_read_data!
+        return self if @read_data
+
+        @read_data = []
+        READ_SERVERS.each do |server|
+          @read_data << grab_metrics(server)
+        end
+        self
+      end
+
+      def gather_write_data!
+        return self if @write_data
+
+        @write_data = []
+        WRITE_SERVERS.each do |server|
+          @write_data << grab_metrics(server)
+        end
+        self
+      end
+
+      def gather_audit_data!
+        return self if @audit_data
+
+        @audit_data = []
+        AUDIT_SERVERS.each do |server|
+          @audit_data << grab_metrics(server)
+        end
+        self
+      end
+
+      def meets_slack_threshold?
+        return false unless options.slack_threshold
+        return false unless average_tps > FIVE_MINUTE_THRESHOLD
+        return false unless current_tps > average_tps
+        return true if current_tps > MAX_THRESHOLD
+
+        false
+      end
+
+      def report!
+        return self if @reported
+
+        parse_opts!
+        from = @args.empty? ? '1 hour ago' : @args.join(' ')
+        to = options.to || 'now'
+        gather_data! from, to
+        @reported = true
+        self
+      end
+
+      def display!
+        report!
+        options.slack_message = true if meets_slack_threshold?
+        puts msg.join("\n")
+        self
+      end
+
+      def msg_line(stat, curr, write, read, audit)
+        format('%<stat>s: %<curr>s Write: %<write>s Read: %<read>s Audit: %<audit>s',
+               stat: stat,
+               curr: curr,
+               write: write,
+               read: read,
+               audit: audit)
+      end
+
+      def msg # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        return @msg if @msg
+
+        @msg = ["TPS Report from #{from} til #{to}"]
+        ending = to == 'now' ? 'CURRENT' : ' ENDING'
+        @msg << msg_line(ending, current_tps, current_write_tps, current_read_tps, current_audit_tps)
+        @msg << msg_line('AVERAGE', average_tps, average_write_tps, average_read_tps, average_audit_tps)
+        @msg << msg_line('MIN', "#{minimum_tps.last} @ #{minimum_tps.first}",
+                         "#{minimum_write_tps.last} @ #{minimum_write_tps.first}",
+                         "#{minimum_read_tps.last} @ #{minimum_read_tps.first}",
+                         "#{minimum_audit_tps.last} @ #{minimum_audit_tps.first}")
+        @msg << msg_line('MAX', "#{maximum_tps.last} @ #{maximum_tps.first}",
+                         "#{maximum_write_tps.last} @ #{maximum_write_tps.first}",
+                         "#{maximum_read_tps.last} @ #{maximum_read_tps.first}",
+                         "#{maximum_audit_tps.last} @ #{maximum_audit_tps.first}")
+      end
+
+      def slack_msg
+        return @slack_msg if @slack_msg
+
+        report!
+        m = msg.dup
+        title = m.shift
+        @slack_msg = { 'channel' => options.channel,
+                       'blocks' => [
+                         {
+                           'type' => 'section',
+                           'text' => {
+                             'type' => 'mrkdwn',
+                             'text' => "#{title}\n```#{m.join("\n")}```"
+                           }
+                         }
+                       ] }
+      end
+
+      def send_slack_message! # rubocop:disable Metrics/AbcSize
+        warn 'Cannot send a slack message without the SLACK_TOKEN env var set' and return unless slack_token
+
+        header = { 'Content-Type' => 'application/json', 'Authorization' => "Bearer #{slack_token}" }
+        uri = URI.parse('https://slack.com/api/chat.postMessage')
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = true
+        req = Net::HTTP::Post.new(uri.request_uri, header)
+        req.body = slack_msg.to_json
+        http.request req
+        warn "Slack message sent to #{options.channel}"
+      end
+    end
+  end
+end
+
+if __FILE__ == $PROGRAM_NAME
+  report = PrizePicks::TpsReport::Reporter.new ARGV
+  reported = report.display!
+  reported.send_slack_message! if reported.options.slack_message
+end

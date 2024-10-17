@@ -1,0 +1,62 @@
+#!/bin/sh
+reverse=0
+hosts_only=0
+while getopts :rHh opt; do
+  case $opt in 
+    r)
+      reverse=1
+      ;;
+    H)
+      hosts_only=1
+      ;;
+    h)
+      echo "expand or reverse traverseal of host/hostclass"
+      echo "$0 [-r] HOST| -H HOSTCLASS"
+      echo "-r is for reverse traversal"
+      echo "with -H, provide a hostclass and ssh to all members of that hostclass"
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+me=${1:-$(hostname)}
+amzn=$me
+lines=">"
+if [ $hosts_only -eq 0 ];then
+  echo $lines $amzn
+fi
+if [ $reverse -eq 0 ];then
+  get_hosts() {
+    class=$1
+    _lines=$2
+    hosts=$(ldapsearch -x -h ldap.amazon.com -b o=amazon.com "(&(amzndiscohostclass=$class)(objectclass=amzndiscohost))" cn|awk '/cn:/{print $2}')
+    for h in $hosts;do
+      if [ $hosts_only -eq 1 ];then
+        echo "$h"
+      else
+        echo "--$_lines $h"
+      fi
+    done
+  }
+  get_hosts $amzn $lines
+  recurse_hostclass() {
+    hc=$1
+    __lines=$2
+    classes=$(ldapsearch -x -h ldap.amazon.com -b o=amazon.com "(&(amzndiscohostclass=$hc)(objectclass=amzndiscohostclass))" cn|awk '/cn:/{print $2}')
+    for m in $classes;do
+      if [ $hosts_only -eq 0 ];then
+        echo "--$__lines $m"
+      fi
+      get_hosts $m --$__lines
+      oldlines=$lines
+      recurse_hostclass $m --$__lines
+      __lines=$oldlines
+    done
+  }
+  recurse_hostclass $amzn $lines
+else
+  while [ "x${amzn}" != "x_none" -a "x${amzn}" != "x" ];do
+    lines="--${lines}"
+    amzn=$(ldapsearch -x -h ldap.amazon.com -b o=amazon.com "cn=$amzn" amzndiscohostclass|awk '/^amzndiscohostclass:/{print $2}')
+    echo "$lines $amzn"
+  done
+fi

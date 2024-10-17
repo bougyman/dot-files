@@ -1,0 +1,5 @@
+new -s myshell
+new-window -n irc -t 0 -k 'bash -c "softbeep ssh myshell.com"'
+attach -t myshell
+source ~/.tmux.conf
+source ~/.tmux.conf.goodies

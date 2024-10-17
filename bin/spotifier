@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+exec dbus-launch spotify
+exec dbus-launch flatpak run com.spotify.Client

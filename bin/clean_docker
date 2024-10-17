@@ -1,0 +1,8 @@
+#!/bin/bash
+set -x
+pattern=$1
+docker images | awk -v pattern="$pattern" '$1 == "<none>"{print} pattern != "" && $1 ~ pattern {print}' | while read -r name tag dead_image rest
+do
+    echo "Removing $name: $tag - $dead_image $rest"
+    docker image rm "$dead_image" --force
+done

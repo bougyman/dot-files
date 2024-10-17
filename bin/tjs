@@ -1,0 +1,5 @@
+#!/bin/sh
+tmux new-session -d -s bougyman
+tmux source-file ~/.tmux.conf.bougy
+tmux select-window -t bougyman:1
+tmux attach -t bougyman

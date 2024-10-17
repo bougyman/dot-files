@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+. ~/.weechat-me/venv/bin/activate
+exec weechat "$@"

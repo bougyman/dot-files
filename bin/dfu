@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+df -l|while read sys blk use avail usage mount;do
+    echo "${sys}:${usage%%%*}:${mount}"
+done|gawk -F: '
+  BEGIN{max=0}
+  /Filesystem:/ {x=1;next}
+  x {
+    dev=$1
+    if(dev ~ "^/dev/loop") next
+    if(dev == "map") next
+    if(dev == "devfs") next
+    if(dev ~ "^efivarfs") next
+    perc=$2
+    if($3 == "/boot/efi") {
+        if(perc < 90) next
+    }
+    if(perc > max) max=strtonum(perc)
+  }
+  END{
+    if(max >  90) {
+      c="#[fg=white,bold]#[bg=red]"
+    } else if(max > 80) {
+      c="#[fg=green,bold]#[bg=red,dim]"
+    } else if(max > 70) {
+      c="#[fg=black,bold]#[bg=green,dim]"
+    } else {
+      c="#[fg=black,bold]#[bg=green,dim]"
+    }
+    print c""max"%"
+  }'
+

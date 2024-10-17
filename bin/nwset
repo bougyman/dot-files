@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+net=$1
+if [ -z "$net" ]
+then
+  printf "No network specified, listing networks. \n\t%s <NETWORK ID> to select it\n" "$0" >&2
+  exec lsnw
+fi
+exec wpa_cli select_network $net

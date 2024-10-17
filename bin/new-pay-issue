@@ -1,0 +1,4 @@
+#!/bin/sh
+: ${milestone:="PaySafe - Cycle 2"}
+: ${project:="PaySafe"}
+gh issue -p "$project" -m "$milestone" "$@"

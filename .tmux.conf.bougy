@@ -1,0 +1,2 @@
+source ~/.tmux.conf.windows
+source ~/.tmux.conf.goodies

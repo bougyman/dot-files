@@ -1,0 +1,1 @@
+su -c 'DISPLAY=:0.0 tmux' - goethe

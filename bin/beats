@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+date="$*"
+: ${date:=now}
+date -u +%T -d "$date"|awk -F: '{printf("%0.1f",  ($1*(1000/24)) + ($2*(1000/1440)) + ($3*(1000/86400)))}'

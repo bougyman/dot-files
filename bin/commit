@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+gum generate --config ./gum-config.json

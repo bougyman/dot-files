@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+gm import "$@" /tmp/sshot.png
+exec qiv -t /tmp/sshot.png

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+date | osd_cat -f '-misc-fixed-medium-r-semicondensed--50-*-*-*-c-*-*-*' -p middle -A right &
+date +"The current time is %H:%M and %S seconds" | festival --tts

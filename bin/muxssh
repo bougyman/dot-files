@@ -1,0 +1,96 @@
+#!/bin/bash
+usage() {
+  echo "Ssh connect to hosts in split tmux"
+  echo "$0 <options> host1 <host2 host3 ...>"
+  echo "  Options:"
+  echo "     -s           - Synchronize keystrokes in the tmux"
+  echo "     -m           - Enable mouse selection of panes"
+  echo "     -l LIMIT     - Limit number of tmux panes to LIMIT"
+  echo "     -H SEARCH    - Connect to all hosts matching the search pattern (also see -p/-r)"
+  echo "     -p PROFILE   - The AWS profile to use for searching"
+  echo "     -r REGION    - The AWS region to use for searching"
+  echo "     -n NAME      - tmux name of the windows of this"
+  echo "     -h           - This help"
+}
+
+limit=0
+sync=0
+mouse=0
+while getopts :shmr:p:H:l:n: opt; do
+  case $opt in
+    s) sync=1
+       ;;
+    m) mouse=1
+       ;;
+    p) profile=$OPTARG 
+       ;;
+    r) region=$OPTARG 
+       ;;
+    H) hostsearch=$OPTARG 
+       ;;
+    l) limit=$OPTARG 
+       ;;
+    n) name=$OPTARG
+       ;;
+    h) usage
+       exit 0
+       ;;
+  esac
+done
+shift $((OPTIND-1))
+
+new_window() {
+  host=$1
+  name=$2
+  set -x
+  tmux new-window -n "$name" "bash -c \"printf '\033]2;%s\033\\' '$host'; source ~/.keychain/$(hostname)-sh; TERM=linux ssh $host\""
+  if [ $mouse -eq 1 ]; then
+    tmux set-window-option mouse-select-pane on
+  fi
+  if [ $sync -eq 1 ]; then
+    tmux set-window-option synchronize-panes on
+  fi
+}
+
+split_window() {
+  host=$1
+  tmux split-window "bash -c \"printf '\033]2;%s\033\\' '$host'; source ~/.keychain/$(hostname)-sh; TERM=linux ssh $host\""
+}
+
+if [ "x$hostsearch" != "x" ];then
+  if which nubis 2>/dev/null
+  then
+      : ${profile:=default}
+      : ${region:=us-west-2}
+      echo "Looking for $hostsearch in $profile/$region" >&2
+      hosts=("$(nubis find-hosts -p "$profile" -r "$region" "$hostsearch")")
+      : ${name:=$hostsearch}
+  else
+      echo "Fatal!: No 'nubis' found in path. Cannot look up hosts." >&2
+      exit 3
+  fi
+else
+  hosts=$@
+  : ${name:=muxssh}
+fi
+
+count=0
+for m in $hosts;do
+  echo $m
+  if [ $count -eq 0 ];then
+    new_window $m $name
+  else
+    echo "$limit"
+    if [ $limit -gt 0 ];then
+      if [ $((count % limit)) -eq 0 ];then
+        new_window $m $name
+      else
+        split_window $m
+      fi
+    else
+      split_window $m
+    fi
+  fi
+  tmux select-layout tiled
+  count=$((count+1))
+done

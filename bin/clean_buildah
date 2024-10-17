@@ -1,0 +1,11 @@
+#!/bin/bash
+buildah containers | while read id rest
+do
+    [ "$id" == "CONTAINER" ] && continue
+    buildah rm "$id" "$@"
+done
+
+buildah images | awk '$1 == "<none>"{print $3}' | while read -r dead_image
+do
+    buildah rmi "$dead_image" "$@"
+done

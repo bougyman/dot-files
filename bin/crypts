@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+if [ "$#" -gt 0 ]
+then
+    for disk in $@
+    do
+        sudo cryptdisks_stop $disk
+        sudo cryptdisks_start $disk
+        sudo mount /mnt/$disk
+    done
+    exit 0
+fi
+
+for disk in micron shield tinny
+do
+    sudo cryptdisks_stop $disk
+    sudo cryptdisks_start $disk
+    sudo mount /mnt/$disk
+done

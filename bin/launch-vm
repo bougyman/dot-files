@@ -1,0 +1,5 @@
+#!/bin/bash
+VM_MEMORY=${VM_MEMORY:-1024}
+vm=$1
+shift
+qemu-system-x86_64 -enable-kvm -m $VM_MEMORY -netdev bridge,id=hn0 -device virtio-net-pci,netdev=hn0,id=nic1 -hda $vm $@

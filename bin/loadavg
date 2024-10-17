@@ -1,0 +1,30 @@
+#!/bin/bash
+if [ -f /proc/loadavg ]
+then
+  awk '{loadavg=$1}
+    END{
+      if(loadavg<1){
+        c="#[fg=red,bg=cyan,bright]"
+      } else if(loadavg<3) {
+        c="#[fg=black,bg=yellow,bright]"
+      } else {
+        c="#[fg=white,bg=red,bright]"
+      }
+      print c loadavg
+    }
+    ' /proc/loadavg
+else
+  sysctl -n vm.loadavg | gawk '
+    { loadavg = strtonum($2) }
+    END{
+      if(loadavg<1){
+        c="#[fg=red,bg=cyan,bright]"
+      } else if(loadavg<3) {
+        c="#[fg=black,bg=yellow,bright]"
+      } else {
+        c="#[fg=white,bg=red,bright]"
+      }
+      print c loadavg
+    }
+  '
+fi

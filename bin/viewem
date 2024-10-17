@@ -1,0 +1,259 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# $DEBUG = true
+require 'fileutils'
+require 'pathname'
+require 'yaml'
+gem 'amatch'
+require 'amatch'
+require 'pry'
+
+require 'optparse'
+
+# rubocop:disable Style/GlobalVars,Lint/MissingCopEnableDirective
+$me = File.basename($PROGRAM_NAME)
+$options = { mov_command: 'mplayer', percentage: ($me.match(/vp/) ? 0.80 : 0.85), recursive: false }
+# rubocop:disable Metrics/BlockLength
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
+
+  opts.on('-sVolume', '--soft-vol VOLUME', 'Set the soft volumt to level VOLUME (greater than 100)') do |o|
+    $options[:soft_vol] = o
+  end
+
+  opts.on('-p', '--pattern PATTERN', 'Pattern to match') do |v|
+    $options[:pattern] = v
+  end
+
+  opts.on('-n', '--new', "Include 'new' files") { |o| $options[:new] = o }
+
+  opts.on('-r', '--recursive', 'Recursively search for files') { |o| $options[:recursive] = o }
+  opts.on('-R', '--reverse', 'Reverse the order of playlist') { |o| $options[:reverse] = o }
+
+  opts.on('-e', '--extension EXT', 'Only play these extensions') do |v|
+    $options[:extension] = v
+  end
+
+  opts.on('-Qenv', '--environment ENV', 'Set environment') do |v|
+    $options[:environment] = v
+  end
+
+  opts.on('-P', '--percentage PERCENTAGE', Float, 'Set the match percentage (Default 85%)') do |v|
+    $options[:percentage] = v
+  end
+
+  opts.on('-m', '--mute', 'Mute Volume') do |v|
+    $options[:mute] = v
+  end
+
+  opts.on('-Mmov', '--mplayer PLAYER', 'Use a different player (Default: mplayer)') do |v|
+    $options[:mov_command] = v
+  end
+
+  opts.on('-L', '--list', 'Just list what you would play') do |v|
+    $options[:list] = v
+  end
+
+  opts.on('-c', '--cache AMOUNT', Integer, 'How much cache to use') do |v|
+    $options[:cache] = v
+  end
+
+  opts.on('--purge', 'Really delete, no backup') do |_v|
+    $options[:purge] = true
+  end
+
+  opts.on('--verbose', 'Debug On') do |_v|
+    $DEBUG = true
+  end
+
+  opts.on_tail('-h', '--help', 'Show this message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+$savefile = Pathname(ENV['HOME']).join(".view_history_#{$me}")
+require 'pp'
+if $savefile.file?
+  $view_history = YAML.load_file($savefile)
+  puts "History: #{$view_history.pretty_inspect}" if $DEBUG
+else
+  $savefile.open('w+') { puts '# yaml file' }
+  $view_history = {}
+end
+
+dir = ARGV[0] || '.'
+puts "In Directory #{dir}" if $DEBUG
+efiles = []
+pattern = $options[:recursive] ? '**/*' : '*'
+if $options[:extension]
+  puts "Extension is #{$options[:extension]}" if $DEBUG
+  efiles = Dir[File.join(dir.sub(%r{/$}, ''), "#{pattern}.#{$options[:extension]}")]
+end
+
+$DEBUG ||= false
+require 'pry'
+# binding.pry
+pfiles = Dir[File.join(dir.sub(%r{/$}, ''), pattern)]
+
+if $options[:new] && $options[:recursive]
+  pfiles += Dir['new/**'] if File.exist?('new') && File.symlink?('new')
+end
+
+pfiles = pfiles.select { |n| n.match(/#{$options[:pattern]}/) } if $options[:pattern]
+mov_pattern = /(?:f4v|flv|vob|m[k4]v|avi|mpe?g|wmv|mov|img|divx|iso|mov|mp4|img)$/i
+pic_pattern = /(?:jpg|png|gif)$/i
+file_pattern = ($me.match(/vp/) ? pic_pattern : mov_pattern)
+files = (efiles.size.positive? ? pfiles & efiles : pfiles).select do |file|
+  File.file?(file) and file.match(file_pattern)
+end
+raise 'What are you thinking, Dave?' if files.size.zero?
+
+$thisdir = File.expand_path(dir)
+
+def find_dir_in_parent_path(dir) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/MethodLength,Metrics/PerceivedComplexity
+  here = $thisdir.dup
+  ardir = File.join(File.split(here).first, dir)
+  puts ardir if $DEBUG
+  until File.directory?(ardir = File.join((split = File.split(here)).first, dir)) || (here == '/')
+    here = split.first
+  end
+  return ardir unless here == '/'
+
+  case $thisdir
+  when /old$/
+    File.expand_path(File.join(thisdir, '..', 'older'))
+  when /older$/
+    File.expand_path(File.join(thisdir, '..', 'oldest'))
+  when /oldest$/
+    nil
+  else
+    if File.directory?(main_old = File.join(ENV['HOME'], 'klibido', dir))
+      main_old
+    else
+      File.expand_path(File.join($thisdir, '..', dir))
+    end
+  end
+end
+
+$savdir = find_dir_in_parent_path($me.match(/vp/) ? 'picarchive' : 'archive')
+# get dirs ready
+$deldir = if File.directory?(File.expand_path('../.junk'))
+            File.expand_path('../.junk')
+          else
+            ENV['HOME'] + '/.junk/.del/'
+          end
+[$savdir, $deldir].each { |sdir| FileUtils.mkpath(sdir) unless File.exist?(sdir) && FileTest.directory?(sdir) }
+
+if $options[:environment]
+  puts 'Environment: '
+  puts "Options: #{$options}"
+  puts "Savedir: #{$savdir} Deldir: #{$deldir} Thisdir: #{$thisdir}"
+  exit
+end
+
+allmovs = []
+while files.size.positive?
+  # shift off the next file
+  movs = [files.shift]
+  diff = 1.0
+  until diff < $options[:percentage] || files.size.zero? || movs.size > 2000 || File.dirname(movs.last) != File.dirname(files.first) # rubocop:disable Metrics/LineLength
+    # Compute the difference in the files based on the current files size and longest subsequence
+    last_file = File.basename(movs.last)
+    next_file = File.basename(files.first)
+    diff = Amatch::LongestSubsequence.new(last_file).match(next_file).to_f / last_file.size
+    movs << files.shift if diff >= $options[:percentage]
+  end
+  allmovs << movs
+end
+
+def vlc_command(movs)
+  opts = []
+  opts << %("#{movs.join('" "')}")
+  "cvlc --video-on-top --play-and-exit -f #{opts.join(' ')}"
+end
+
+def mplayer_command(movs)
+  opts = []
+  opts << '-idx' if movs[0].match(/avi$/i)
+  opts << '-ao null' if $options[:mute]
+  opts << "-cache #{$options[:cache]}" if $options[:cache]
+  opts << "-af volume=#{$options[:soft_vol]}:1" if $options[:soft_vol]
+  opts << %("#{movs.join('" "')}")
+  "mplayer #{opts.join(' ')}"
+end
+
+def mov_command(movs)
+  send("#{$options[:mov_command]}_command".to_sym, movs)
+end
+
+def playmovs(movs) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity,Metrics/MethodLength,Metrics/PerceivedComplexity
+  puts "Files are #{movs.join(', ')}" # unless $options[:list]
+  if $me.match(/vp/)
+    opts = %w[-t -f -s]
+    opts << %("#{movs.join('" "')}")
+    cmd = "qiv #{opts.join(' ')}"
+  else
+    cmd = mov_command(movs)
+  end
+  puts cmd if $DEBUG || $options[:list]
+  return if $options[:list]
+
+  puts `#{cmd} 2>&1`
+  full_mov_path = File.expand_path(movs.first)
+  $view_history[full_mov_path] = if (viewed = $view_history[full_mov_path])
+                                   viewed + 1
+                                 else
+                                   1
+                                 end
+  print "Would you like to move this to #{$savdir}? "
+  system('stty raw')
+  answer = $stdin.read(1)
+  system('stty -raw')
+  puts ''
+  if answer.match(/y/i)
+    movs.each { |file| FileUtils.mv(file, $savdir) } unless $savdir.nil?
+  elsif answer.match(/\./i)
+    $view_history[full_mov_path] -= 1
+    playmovs(movs)
+  else
+    print 'Do you want to delete it? '
+    system('stty raw')
+    ans = $stdin.read(1)
+    system('stty -raw')
+    puts ''
+    if ans.match(/y/i)
+      movs.each { |file| $options[:purge] ? FileUtils.rm(file) : FileUtils.mv(file, $deldir) }
+    end
+  end
+  print 'Would you like to quit? '
+  system('stty raw')
+  ans = $stdin.read(1)
+  system('stty -raw')
+  puts ''
+  return unless ans.match(/y/i)
+
+  puts 'Ok, quitting'
+  exit
+end
+now = Time.now.to_f
+begin
+  sorted = allmovs.sort do |a, b|
+    if $view_history[a.first] || $view_history[b.first]
+      hist_a = $view_history[a.first] || 0
+      hist_b = $view_history[b.first] || 0
+      if hist_a == hist_b
+        rand(now) <=> rand(now)
+      else
+        hist_a <=> hist_b
+      end
+    else
+      rand(now) <=> rand(now)
+    end
+  end
+  sorted.reverse! if $options[:reverse]
+  sorted.each { |mov| playmovs(mov) }
+ensure
+  $savefile.open('w+') { |f| f.puts $view_history.to_yaml }
+end

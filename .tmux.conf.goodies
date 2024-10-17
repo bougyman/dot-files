@@ -1,0 +1,7 @@
+set-option status-right-length 55
+set-option status-left-length 60
+set-option status-right "#[bg=default] #($HOME/bin/cpusummary)#[bg=default] #($HOME/bin/loadavg)#[bg=default] #($HOME/bin/dfu)#[bg=default] #($HOME/bin/battery)#[bg=default] #[fg=green]%b %d, %Y "
+set-option status-left "#[fg=white,bold][%H:%M] <#[bg=default]#(~/bin/kcontext.tmux)#[fg=white,bold]>#(~/bin/git-branch.tmux #{pane_current_path})"
+setw -g window-status-current-style fg=red,bg=default
+set-option -g status-style fg=pink,bright
+

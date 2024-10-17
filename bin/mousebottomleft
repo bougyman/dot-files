@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+export DISPLAY=:0.0
+bottom=$(xdotool getdisplaygeometry | awk '{print $2}')
+exec xdotool mousemove 0 $bottom

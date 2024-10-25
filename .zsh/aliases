@@ -5,6 +5,7 @@ then
 else
   alias l="ls --color -F"
 fi
+alias e="chpst -e ~/sv/.env"
 alias ll="l -l"
 alias lss="l -Ss"
 alias la="l -a"

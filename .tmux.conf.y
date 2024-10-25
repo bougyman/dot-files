@@ -1,3 +1,3 @@
-set-option -g prefix C-j
-bind-key j send-prefix
-bind-key C-j last
+set-option -g prefix C-"$ESCAPEKEY"
+bind-key "$ESCAPEKEY" send-prefix
+bind-key C-"$ESCAPEKEY" last

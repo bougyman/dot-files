@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-exec dbus-launch spotify
-exec dbus-launch flatpak run com.spotify.Client
+exec chpst -e ~/sv/.env dbus-launch spotify

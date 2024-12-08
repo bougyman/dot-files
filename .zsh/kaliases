@@ -16,9 +16,7 @@ alias mkgp="mkg po"
 alias mkdp="mkd po"
 alias mkge="mk get events --sort-by='{.lastTimestamp}'"
 
-kexit() {
-  k exec -it $1 -- /bin/sh
-}
+alias kexit="k exec -it"
 
 alias ku=kustomize
 alias kb="ku build"

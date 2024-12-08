@@ -13,3 +13,9 @@
 [submodule ".config/nushell/modules/argx.nu"]
 	path = .config/nushell/modules/argx.nu
 	url = https://github.com/fj0r/argx.nu
+[submodule ".config/nushell/modules/kubernetes.nu"]
+	path = .config/nushell/modules/kubernetes.nu
+	url = https://github.com/fj0r/kubernetes.nu
+[submodule ".config/nushell/modules/modules/git.nu"]
+	path = .config/nushell/modules/modules/git.nu
+	url = https://github.com/fj0r/git.nu

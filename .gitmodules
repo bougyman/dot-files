@@ -19,3 +19,9 @@
 [submodule ".config/nushell/modules/modules/git.nu"]
 	path = .config/nushell/modules/modules/git.nu
 	url = https://github.com/fj0r/git.nu
+[submodule ".config/nushell/modules/git.nu"]
+	path = .config/nushell/modules/git.nu
+	url = https://github.com/fj0r/git.nu
+[submodule ".config/nushell/modules/ai.nu"]
+	path = .config/nushell/modules/ai.nu
+	url = https://github.com/fj0r/ai.nu

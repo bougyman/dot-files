@@ -7,3 +7,9 @@
 [submodule ".config/nushell/modules/nupm"]
 	path = .config/nushell/modules/nupm
 	url = https://github.com/nushell/nupm
+[submodule ".config/nushell/modules/kubernetes.ku"]
+	path = .config/nushell/modules/kubernetes.ku
+	url = https://github.com/fj0r/kubernetes.nu
+[submodule ".config/nushell/modules/argx.nu"]
+	path = .config/nushell/modules/argx.nu
+	url = https://github.com/fj0r/argx.nu

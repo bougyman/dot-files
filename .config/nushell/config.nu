@@ -67,3 +67,4 @@ def --env mise_hook [] {
 }
 
 use ($nu.home-path | path join "g" "dot-files" ".config" "nushell" "priv") *
+source ~/.zoxide.nu

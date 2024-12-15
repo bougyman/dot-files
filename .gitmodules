@@ -25,3 +25,6 @@
 [submodule ".config/nushell/modules/ai.nu"]
 	path = .config/nushell/modules/ai.nu
 	url = https://github.com/fj0r/ai.nu
+[submodule ".config/nushell/modules/nu-digital-rain"]
+	path = .config/nushell/modules/nu-digital-rain
+	url = https://github.com/ArmoredPony/nu-digital-rain

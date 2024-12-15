@@ -73,6 +73,9 @@ def --env mise_hook [] {
 }
 
 use ($nu.home-path | path join "g" "dot-files" ".config" "nushell" "priv") *
+
 source ~/.zoxide.nu
+
+source ~/.cache/carapace/init.nu
 
 # vim: set syntax=nu et sw=4 sts=4 ts=4 :

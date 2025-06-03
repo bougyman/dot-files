@@ -57,6 +57,7 @@ alias -g IX="|& curl -F 'f:1=<-' ix.io"
 alias -g XCP="| xclip -selection clipboard"
 alias -g XG="| xargs ack"
 alias -g X="| xargs"
+alias -g Z="| fzf"
 
 alias ...="cd ../.."
 alias ....="cd ../../.."

@@ -1,0 +1,3 @@
+[env]
+PAGER = "bat"
+GITSTATUS_DAEMON = "/opt/homebrew/bin/gitstatusd"

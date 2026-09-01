@@ -1,3 +1,4 @@
 [env]
 PAGER = "bat"
+BAT_PAGER = "less -RFX"
 GITSTATUS_DAEMON = "/opt/homebrew/bin/gitstatusd"

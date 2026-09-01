@@ -1,0 +1,29 @@
+# Enable Vim command line editing mode
+
+# Define a setup function that triggers AFTER plugins and prompts load
+activate_vim_mode() {
+  # 1. Force Vim mode layout
+  bindkey -v
+
+  # 2. Clear conflicting framework ESC and run-help hooks
+  bindkey -r "^["
+  bindkey -r "^[^["
+  bindkey -M viins -r "^[h"
+  bindkey -M vicmd -r "^[h"
+
+  # 3. Bind ESC to snap instantly to Normal mode
+  bindkey -M viins '^[' vi-cmd-mode
+  export KEYTIMEOUT=1
+
+  # 4. Map Ctrl+S to trigger the sudo line expansion in both modes
+  bindkey -M viins "^S" sudo-command-line
+  bindkey -M vicmd "^S" sudo-command-line
+
+
+  # 5. Self-destruct this hook so it only runs once at startup
+  add-zsh-hook -d precmd activate_vim_mode
+}
+
+# Register the function to run right before the first prompt displays
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd activate_vim_mode

@@ -28,3 +28,6 @@
 [submodule ".config/nushell/modules/nu-digital-rain"]
 	path = .config/nushell/modules/nu-digital-rain
 	url = https://github.com/ArmoredPony/nu-digital-rain
+[submodule ".config/oh-my-zsh"]
+	path = .config/oh-my-zsh
+	url = git@github.com:ohmyzsh/ohmyzsh.git

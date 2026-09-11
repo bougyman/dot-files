@@ -1,0 +1,26 @@
+#!/usr/bin/env zsh
+
+# ~/.p10k-mise.zsh
+
+source "${${(%):-%x}:A:h}/lib/p10k-mise-icons.zsh"
+
+function prompt_mise() {
+  (( $+commands[mise] )) || return
+
+  local -a tools=(${(f)"$(mise ls --current --local 2>/dev/null)"})
+  [[ -z "$tools" ]] && return
+
+  local -a fields
+  local tool version name icon color
+
+  for tool in "${tools[@]}"; do
+    fields=(${=tool})
+    name=$fields[1]
+    version=$fields[2]
+
+    icon=${P10K_MISE_TOOL_ICONS[$name]:-$'\uF013'}
+    color=${P10K_MISE_TOOL_COLORS[$name]:-7}
+
+    p10k segment -f $color -i "$icon" -t "$version"
+  done
+}

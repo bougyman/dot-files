@@ -105,6 +105,7 @@ if [ -z "$TMUX_POWERLINE_LEFT_STATUS_SEGMENTS" ]; then
         "my_char 255 0"
 		"utc_time 235 136 ${TMUX_POWERLINE_SEPARATOR_LEFT_THIN}"
 		"mode_indicator 165 0"
+		"vcs_branch 29 88"
 		#"hostname 33 0"
 		#"ifstat 30 255"
 		#"ifstat_sys 30 255"
@@ -118,11 +119,10 @@ fi
 if [ -z "$TMUX_POWERLINE_RIGHT_STATUS_SEGMENTS" ]; then
 	TMUX_POWERLINE_RIGHT_STATUS_SEGMENTS=(
 		"pwd 89 211"
-		"vcs_branch 29 88"
-		"vcs_compare 60 255"
-		"vcs_staged 64 255"
-		"vcs_modified 9 255"
-		"vcs_others 245 0"
+		#"vcs_compare 60 255"
+		#"vcs_staged 64 255"
+		#"vcs_modified 9 255"
+		#"vcs_others 245 0"
 		"battery 137 127"
 		"weather 37 255"
 		"$(

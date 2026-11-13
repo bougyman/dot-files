@@ -1,4 +1,8 @@
 [env]
+_.path = "~/bin:~/.local/bin"
+EDITOR="vim"
 PAGER = "bat"
 BAT_PAGER = "less -RFX"
 GITSTATUS_DAEMON = "/opt/homebrew/bin/gitstatusd"
+SVDIR = "${HOME}/service"
+LESSUTFCHARDEF = "e000-f8ff:p,f0001-fffff:p"

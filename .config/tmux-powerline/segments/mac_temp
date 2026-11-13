@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Custom segment for Apple Silicon CPU Temperature
+
+run_segment() {
+    local smc_path
+    smc_path="/Applications/Stats.app/Contents/Resources/smc"
+
+    if [ -f "$smc_path" ]; then
+        # Fetch the primary thermal sensor value and round to integer
+        local temp
+        temp=$("$smc_path" list -t |awk '/Te05/{print int($2)}')
+        if [ -n "$temp" ] && [ "$temp" -gt 0 ]
+        then
+            local color
+
+            # Determine color based on temperature thresholds
+            if [ "$temp" -gt 65 ]; then
+                color="#[fg=red]"
+            elif [ "$temp" -ge 60 ]; then
+                color="#[fg=yellow]"
+            else
+                color="#[fg=green]"
+            fi
+
+            # Output with the color format string
+            echo "${color}${temp}°C"
+            set +x
+            return 0
+        fi
+    fi
+    echo "[fg=red]N/A!"
+    return 1
+}
+
+run_segment

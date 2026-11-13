@@ -84,7 +84,7 @@ plugins=(
 
 # fpath+="${ZSH_CUSTOM:-"$ZSH/custom"}/plugins/zsh-completions/src"   # install zsh-completions, if you need it
 
-# source $ZSH/oh-my-zsh.sh          # This is now run in .zshrc after importing user configs from ~/.config/ezsh/zshrc/* files 
+# source $ZSH/oh-my-zsh.sh          # This is now run in .zshrc after importing user configs from ~/.config/ezsh/zshrc/* files
 
 # User configuration
 
@@ -123,8 +123,7 @@ export PATH=$PATH:~/.local/bin
 
 export PATH=$PATH:~/.config/ezsh/bin
 
-NPM_PACKAGES="${HOME}/.npm"
-PATH="$NPM_PACKAGES/bin:$PATH"
+PATH="$PATH"
 
 [[ -s "$HOME/.config/ezsh/marker/marker.sh" ]] && source "$HOME/.config/ezsh/marker/marker.sh"
 
@@ -142,8 +141,8 @@ alias l="ls --hyperlink=auto -lAhrtF"    # show all except . .. , sort by recent
 alias e="exit"
 alias ip="ip --color=auto"
 ## Install EZA to use this. The better ls command
-alias a='eza -la --git --colour-scale all -g --smart-group --icons always'  #the new ls; add --hyperlink if you like
-alias aa='eza -la --git --colour-scale all -g --smart-group --icons always -s modified -r' #sort by new
+alias a='eza -la --git --color-scale all -g --smart-group --color always --icons always'  #the new ls; add --hyperlink if you like
+alias aa='eza -la --git --color-scale all -g --smart-group --color always --icons always -s modified -r' #sort by new
 
 
 # CUSTOM FUNCTIONS
